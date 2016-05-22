@@ -1,6 +1,9 @@
-# Master Mind Game - API implementation on REST services
+# Master Mind Game
+## API implementation on REST services
 
 This version is only available through REST requisitions using Json as data format.
+
+It is implemented in Java with Spring Boot. The application server is integrated within the application.
 
 
 ## Endpoints
@@ -17,12 +20,20 @@ This version is only available through REST requisitions using Json as data form
 
 ## Installation
 
-**Items from 1 to 3 can be skipped if you want to use an existing database, just make sure you update "application.properties" accordingly.**
+*Items from 1 to 3 can be skipped if you want to use an existing database, just make sure you update "application.properties" accordingly.*
 
 1. Install MySQL
 2. Create a database in MySQL with name "mastermind"
 3. Create a user "mastermind" with the password "mastermind"
-4. Run the script "src\script\populate.sql" in the database
+4. Run the script "src/script/populate.sql" in the database
+5. Build and package the application:
+  * $mastermind_home/> mvn install  
+6. Run the application and server:
+  * $mastermind_home/> java -jar target/mastermind-*.jar
+7. Access the endpoint '</new_game>':
+  * http://localhost:8080/new_game
+
+The implementation is based in this documentation: http://careers.axiomzen.co/challenge
 
 
 ## Testing
