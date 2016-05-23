@@ -1,4 +1,4 @@
-# Master Mind Game
+# Mastermind Game
 ## API implementation on REST services
 
 This version is only available through REST requisitions using Json as data format.
