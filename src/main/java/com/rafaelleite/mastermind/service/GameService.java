@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -192,8 +194,21 @@ public class GameService {
 	}
 
 	private boolean userHasAccess(Game game, String userName) {
-		// TODO Auto-generated method stub
-		return false;
+		// If no one guessed yet, let the user guess!
+		if (game.getGuesses().isEmpty())
+			return true;
+		
+		// Get a list of the users
+		Set<String> users = game.getGuesses().stream()
+			.map(Guess::getUserName)
+			.collect(Collectors.toSet());
+		
+		// If there are players who didn't play, let this be one of them
+		if (users.size() < game.getNumberOfPlayers())
+			return true;
+		
+		// Otherwise let this user play if he/she already played
+		return users.contains(userName);
 	}
 
 	private boolean userCanPlay(Game game, String userPlaying) {

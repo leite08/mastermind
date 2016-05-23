@@ -112,6 +112,9 @@ public class GameController {
 			case MULTIPLAYER_MISSING_USER:
 				response.sendError(HttpURLConnection.HTTP_BAD_REQUEST, "Missing user name in multiplayer game");
 				return null;
+			case MULTIPLAYER_FULL:
+				response.sendError(HttpURLConnection.HTTP_UNAUTHORIZED, "Multiplayer game is full");
+				return null;
 			case MULTIPLAYER_WAIT_TURN:
 				message = "Its not your turn just yet... wait for the other user(s) to make their guess(es) too... :)";
 				break;
