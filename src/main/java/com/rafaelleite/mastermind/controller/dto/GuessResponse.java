@@ -11,6 +11,7 @@ public class GuessResponse {
 	public int num_guesses;
 	public List<PastResult> past_results = new ArrayList<>();
 	public String guess;
+	public String user;
 	public boolean solved;
 	public long time_taken;
 	public List<Character> colors = new ArrayList<>();
@@ -87,5 +88,13 @@ public class GuessResponse {
 
 	public void setResult(Result result) {
 		this.result = result;
+	}
+
+	public String getUser() {
+		return user;
+	}
+
+	public void setUser(String user) {
+		this.user = user;
 	}
 }

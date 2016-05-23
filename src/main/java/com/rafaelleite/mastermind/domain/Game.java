@@ -52,6 +52,9 @@ public class Game {
 	@Column(columnDefinition="INT(1)")
 	private boolean solved;
 	
+	@Column(nullable = true, name = "number_of_players")
+	private int numberOfPlayers;
+	
 	/*
 	 * Time taken for the user to win the game, IN SECONDS.
 	 */
@@ -140,5 +143,14 @@ public class Game {
 	public void setSolution(String solution) {
 		this.solution = solution;
 	}
+
+	public int getNumberOfPlayers() {
+		return numberOfPlayers;
+	}
+
+	public void setNumberOfPlayers(int numberOfPlayers) {
+		this.numberOfPlayers = numberOfPlayers;
+	}
+
 
 }

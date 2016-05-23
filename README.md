@@ -30,7 +30,7 @@ It is implemented in Java with Spring Boot. The application server is integrated
   * $mastermind_home/> mvn install  
 6. Run the application and server:
   * $mastermind_home/> java -jar target/mastermind-*.jar
-7. Access the endpoint '</new_game>':
+7. Access the endpoint "/new_game" to start playing:
   * http://localhost:8080/new_game
 
 The implementation is based in this documentation: http://careers.axiomzen.co/challenge
@@ -46,6 +46,10 @@ The implementation is based in this documentation: http://careers.axiomzen.co/ch
 
 ## Future
 
-* Improve integration tests
-* Improve unit testing 
-* Use Https and Authentication?
+* Functional
+  * Control the number of turns
+* Non-functional
+  * Improve integration tests
+  * Improve unit testing 
+  * Use Https and Authentication?
+  * Add Internationalization (I18N)

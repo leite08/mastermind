@@ -5,7 +5,12 @@ import static java.lang.String.format;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -52,10 +57,25 @@ public class GameService {
 	 * @return a newly created game
 	 */
 	public Game newGame(String userName) {
+		return newGame(userName, 1);
+	}
+	/**
+	 * Create a new game for the given user.
+	 * If the game is in multiplayer mode, each user has to play in order for the
+	 * first user might play again. 
+	 * 
+	 * @param userName
+	 * @param numberOfPlayers indicates the number of players for multiplayer mode.
+	 * @return a newly created game
+	 */
+	public Game newGame(String userName, int numberOfPlayers) {
+		if (numberOfPlayers <= 0)
+			numberOfPlayers = 1;
 
 		// Create the game
 		Game game = new Game();
 		game.setUserName(userName);
+		game.setNumberOfPlayers(numberOfPlayers);
 		game.setCreatedAt(LocalDateTime.now());
 		game.setKey(nextSessionId());
 		game.setSolution(generateRandomSolution());
@@ -80,7 +100,9 @@ public class GameService {
 	 * Enum that represents the different results for a guess method. 
 	 */
 	public enum GuessResult {
-		OK, GAME_NOT_FOUND, GAME_OVER_SOLVED, GAME_OVER_NUM_ATTEMPS, GAME_OVER_EXPIRED;
+		OK, GAME_NOT_FOUND, GAME_OVER_SOLVED, GAME_OVER_NUM_ATTEMPS, 
+		GAME_OVER_EXPIRED, MULTIPLAYER_WAIT_TURN, MULTIPLAYER_MISSING_USER, 
+		MULTIPLAYER_FULL;
 		
 		private Guess guess;
 
@@ -100,8 +122,20 @@ public class GameService {
 	 * @param code the combination the user is guessing
 	 * @return GuessResult indicating the result of the guess
 	 */
-	@Transactional
 	public GuessResult guess(String gameKey, String code) {
+		return guess(gameKey, code, null);
+	}
+	/**
+	 * Process a new user's guess.
+	 * 
+	 * @param gameKey key that identifies the game 
+	 * @param code the combination the user is guessing
+	 * @param userName the name of the user trying to guess the solution. Might 
+	 * 		be null for single-player.
+	 * @return GuessResult indicating the result of the guess
+	 */
+	@Transactional
+	public GuessResult guess(String gameKey, String code, String userName) {
 
 		Guess guess = new Guess();
 		guess.setCreatedAt(LocalDateTime.now());
@@ -112,7 +146,25 @@ public class GameService {
 			log.debug(format("Didn't find a game with key '%s'", gameKey));
 			return GuessResult.GAME_NOT_FOUND.setGuess(guess);
 		}
+		
 		guess.setGame(game);
+		
+		// Multiplayer mode, make sure everyone plays the same amount of turns
+		if (game.getNumberOfPlayers() > 1) {
+			if (userName == null || userName.trim().isEmpty()) {
+				log.debug(format("User trying to play without informing the username on game '%s'", gameKey));
+				return GuessResult.MULTIPLAYER_MISSING_USER.setGuess(guess);
+			}
+			if (!userHasAccess(game, userName)) {
+				log.debug(format("User '%s' trying to play but game is full - game '%s'", userName, gameKey));
+				return GuessResult.MULTIPLAYER_FULL.setGuess(guess);
+			}
+			if (!userCanPlay(game, userName)) {
+				log.debug(format("User trying to play before others '%s' on game '%s'", userName, gameKey));
+				return GuessResult.MULTIPLAYER_WAIT_TURN.setGuess(guess);
+			}
+			guess.setUserName(userName);
+		}
 
 		// TODO: check the number of attempts
 		// TODO: store the game result in the repository
@@ -137,6 +189,62 @@ public class GameService {
 		game = gameRepo.save(game);
 
 		return GuessResult.OK.setGuess(guess);
+	}
+
+	private boolean userHasAccess(Game game, String userName) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	private boolean userCanPlay(Game game, String userPlaying) {
+		
+		// If no one guessed yet, let the user guess!
+		if (game.getGuesses().isEmpty())
+			return true;
+		
+		// If the user was the last to guess, let others play
+		if (lastGuessPlayer(game).equals(userPlaying))
+			return false;
+		
+		// Create a map with the number of guesses per user
+		Map<String, Integer> guessesPerUser = new HashMap<>();
+		for (Guess guess : game.getGuesses()) {
+			Integer numGuesses = guessesPerUser.get(guess.getUserName());
+			if (numGuesses == null) {
+				numGuesses = 0;
+			}
+			guessesPerUser.put(guess.getUserName(), ++numGuesses);
+		}
+		
+		// Check if every user guessed at least once
+		if (game.getNumberOfPlayers() > guessesPerUser.keySet().size()) {
+			// Someone didn't play
+			// If this user already did, return false
+			if (guessesPerUser.get(userPlaying) != null) {
+				return false;
+			}
+		} else {
+			// Everyone played at least once
+			// If there is no user with preference over the user playing, he/she can play now.
+			// Those with fewer guesses have preference over those who already guessed.
+			int userPlayingNumGuesses = guessesPerUser.get(userPlaying);
+			for (String userInLoop : guessesPerUser.keySet()) {
+				if (!userInLoop.equals(userPlaying) 
+						&& guessesPerUser.get(userInLoop) < userPlayingNumGuesses) {
+					// Someone played fewer times than the current user
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private String lastGuessPlayer(Game game) {
+	    final Comparator<Guess> comp = (g1, g2) -> g1.getCreatedAt().compareTo(g2.getCreatedAt());
+	    return game.getGuesses().stream()
+	                              .max(comp)
+	                              .get()
+	                              .getUserName();
 	}
 
 	/**

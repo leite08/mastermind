@@ -51,6 +51,7 @@ public class GameController {
 			return null;
 		}
 		String userName;
+		int numberOfPlayers = -1;
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			JsonNode actualObj = mapper.readTree(body).get("user");
@@ -63,12 +64,19 @@ public class GameController {
 				response.sendError(HttpURLConnection.HTTP_BAD_REQUEST, "User name cannot be empty");
 				return null;
 			}
+			
+			// Optional - Only for multiplayer
+			actualObj = mapper.readTree(body).get("number_of_players");
+			if (actualObj != null) {
+				numberOfPlayers = actualObj.asInt();
+			}
+			
 		} catch (JsonParseException e) {
 			response.sendError(HttpURLConnection.HTTP_BAD_REQUEST, "Malformed body");
 			return null;
 		}
 		log.debug("Creating a new game");
-		return gameService.newGame(userName);
+		return gameService.newGame(userName, numberOfPlayers);
 	}
 	
 	//#####################################################################################
@@ -88,9 +96,9 @@ public class GameController {
 			response.sendError(HttpURLConnection.HTTP_BAD_REQUEST, "Missing code/guess");
 			return null;
 		}
-		log.debug("Making a new guess on game " + guessParam.game_key);
+		log.debug(format("Making a new guess on game '%s', user '%s'", guessParam.game_key, guessParam.user));
 		String message = null;
-		GuessResult guessResult = gameService.guess(guessParam.game_key, guessParam.code);
+		GuessResult guessResult = gameService.guess(guessParam.game_key, guessParam.code, guessParam.user);
 		switch (guessResult) {
 			case GAME_OVER_SOLVED:
 				message = "Game already solved.";
@@ -101,6 +109,12 @@ public class GameController {
 			case GAME_NOT_FOUND:
 				response.sendError(HttpURLConnection.HTTP_NOT_FOUND, "Game not found");
 				return null;
+			case MULTIPLAYER_MISSING_USER:
+				response.sendError(HttpURLConnection.HTTP_BAD_REQUEST, "Missing user name in multiplayer game");
+				return null;
+			case MULTIPLAYER_WAIT_TURN:
+				message = "Its not your turn just yet... wait for the other user(s) to make their guess(es) too... :)";
+				break;
 			case OK:
 				if (guessResult.getGuess().getGame().isSolved()) {
 					message = "Congratulations! You solved the puzzle!";
@@ -124,6 +138,7 @@ public class GameController {
 			pastResult.guess = pastGuess.getGuess();
 			pastResult.exact = pastGuess.getExact();
 			pastResult.near = pastGuess.getNear();
+			pastResult.user = pastGuess.getUserName();
 			r.past_results.add(pastResult);
 		}
 		r.guess = guess.getGuess();

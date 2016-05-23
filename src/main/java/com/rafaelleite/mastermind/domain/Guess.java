@@ -25,6 +25,10 @@ public class Guess {
 	@Column(nullable = false)
 	private String guess;
 
+	// If in multiplayer mode, holds the user who made this guess
+	@Column(nullable = true)
+	private String userName;
+
 	@Column(nullable = false)
 	@JsonIgnore
 	private LocalDateTime createdAt;
@@ -87,5 +91,13 @@ public class Guess {
 
 	public void setGame(Game game) {
 		this.game = game;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 }

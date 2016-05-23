@@ -5,11 +5,11 @@
 
 	<groupId>com.rafaelleite</groupId>
 	<artifactId>mastermind</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
 	<name>Master Mind</name>
-	<description>Master Mind challenge</description>
+	<description>Master Mind challenge, API only (REST/Json)</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
